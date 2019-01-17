@@ -100,8 +100,7 @@ func callFunc(vm *exec.VirtualMachine, r *resolv.Resolver, f Function) string {
     return ""
 }
 
-func callAdd() Function {
-    params := "33"
+func callAdd(params string) Function {
     f := Function{"Add",params,""}
     return f
 }
@@ -115,8 +114,14 @@ func callSub(params string) Function {
 func main() {
     b := readWasm()
     r, vm := setupVmAndResolv(b)
-    result1 := callFunc(vm, r, callAdd())
+    result1 := callFunc(vm, r, callSub("10"))
     fmt.Println("result1:" + result1)
     result2 := callFunc(vm, r, callSub("11"))
     fmt.Println("result2:" + result2)
+    result3 := callFunc(vm, r, callSub("12"))
+    fmt.Println("result2:" + result3)
+    result4 := callFunc(vm, r, callSub("13"))
+    fmt.Println("result2:" + result4)
+    result5 := callFunc(vm, r, callSub("14"))
+    fmt.Println("result2:" + result5)
 }

@@ -48,63 +48,72 @@ func Sub(a int) int {
 
 func main() {
     //fs := []string{"Add", "Sub"}
-    results := make(chan map[string] string)
+    channel := make(chan map[string] string)
+
     //for _, method := range fs {
-    //   go func() {
-    //       //var out string
-    //       var out map[string] string
-    //       wiasm.Call(method, "input", &out)
-    //       results <- out
-    //   }()
+    //    go func() {
+    //        //var out string
+    //        var call map[string] string
+    //        wiasm.Call(method, "input", &call)
+    //        results <- call
+    //    }()
     //}
+
     go func() {
-       //var out string
-       var out map[string] string
-       wiasm.Call("Add", "input", &out)
-       results <- out
+        //var out string
+        var call map[string] string
+        wiasm.Call("Add", "input", &call)
+        channel <- call
     }()
     go func() {
-       //var out string
-       var out map[string] string
-       wiasm.Call("Sub", "input", &out)
-       results <- out
+        //var out string
+        var call map[string] string
+        wiasm.Call("Sub", "input", &call)
+        channel <- call
     }()
+
     //
     //len := len(fs)
-    for i := 0; i < 2; i++ {
+    for i := 0; i < 100; i++ {
         select {
-        case out := <-results:
-            exectueDecision(out)
+        case call := <-channel:
+            exectueDecision(channel, call)
         }
     }
 }
 
-func exectueDecision(out map[string] string)  {
-    method := out["method"]
+func exectueDecision(channel chan map[string] string, call map[string] string)  {
+    method := call["method"]
     switch method {
     case "Add":
-        params := out["params"]
+        params := call["params"]
         wiasm.Log("select out: " + params)
         pnum, _ := strconv.Atoi(params)
         result := Add(pnum)
-        m := method + "Result"
-        resultCallBack(m, result)
+        resultCallBack(channel, method, result)
     case "Sub":
-        params := out["params"]
+        params := call["params"]
         wiasm.Log("select out: " + params)
         pnum, _ := strconv.Atoi(params)
         result := Sub(pnum)
-        m := method + "Result"
-        resultCallBack(m, result)
+        resultCallBack(channel, method, result)
     }
 }
 
-func resultCallBack(method string, result int)  {
+func resultCallBack(channel chan map[string] string, method string, result int)  {
     c := make(chan map[string] string)
     go func() {
         var output map[string] string
-        wiasm.Call(method, strconv.Itoa(result), &output)
+        wiasm.Call(method + "Result", strconv.Itoa(result), &output)
         c <- output
+
+        var call map[string] string
+        wiasm.Call(method, "input", &call)
+        channel <- call
+        select {
+        case call := <-channel:
+            exectueDecision(channel, call)
+        }
     }()
     select {
     case <- c:
