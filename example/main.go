@@ -11,9 +11,9 @@ import (
 
 
 type Function struct  {
-    methodName string
-    params string
-    result string
+    MethodName string
+    Params interface{}
+    Result interface{}
 }
 
 func readWasm() []byte {
@@ -43,11 +43,15 @@ func setupVmAndResolv(b []byte) (r *resolv.Resolver, vm *exec.VirtualMachine) {
 }
 
 func generateInput(f Function) []byte {
-    Input := make(map[string] string)
-    Input["method"] = f.methodName
-
-    Input["params"] = f.params
-    bytes, _:= json.Marshal(Input)
+    //Input := make(map[string] interface{})
+    //Input["method"] = f.methodName
+    //
+    //Input["params"] = f.params
+    //bytes, err:= json.Marshal(Input)
+    bytes, err:= json.Marshal(f)
+    if err != nil {
+        fmt.Println(err.Error())
+    }
     return bytes
 }
 
@@ -66,7 +70,7 @@ func resumeCallFunc(vm *exec.VirtualMachine, r *resolv.Resolver, input []byte, i
 
 func resumeReturnCall(vm *exec.VirtualMachine, r *resolv.Resolver, methodName string) string {
     for index, v := range r.BlockedCalls {
-        fmt.Println("2222:" + v.Method)
+        fmt.Println("resumeReturnCall:" + v.Method)
         if v.Method == methodName {
             result := string(r.BlockedCalls[index].Input)
             input, _ := json.Marshal(make(map[string] string))
@@ -81,8 +85,8 @@ func callFunc(vm *exec.VirtualMachine, r *resolv.Resolver, f Function) string {
     if len(r.BlockedCalls) > 0 {
         isExist := false
         for index, v := range r.BlockedCalls {
-            fmt.Println("1111:" + v.Method)
-            if v.Method == f.methodName {
+            fmt.Println("callFunc:" + v.Method)
+            if v.Method == f.MethodName {
                 isExist = true
                 input := generateInput(f)
                 //input := []byte("\"22\"")
@@ -91,10 +95,10 @@ func callFunc(vm *exec.VirtualMachine, r *resolv.Resolver, f Function) string {
             }
         }
 
-        return resumeReturnCall(vm, r, f.methodName + "Result")
+        return resumeReturnCall(vm, r, f.MethodName + "Result")
 
         if !isExist {
-            fmt.Println("there's no function named " + f.methodName + " exported in wasm file!")
+            fmt.Println("there's no function named " + f.MethodName + " exported in wasm file!")
         }
     }
     return ""
@@ -114,14 +118,14 @@ func callSub(params string) Function {
 func main() {
     b := readWasm()
     r, vm := setupVmAndResolv(b)
-    result1 := callFunc(vm, r, callSub("10"))
+    result1 := callFunc(vm, r, callAdd("10"))
     fmt.Println("result1:" + result1)
-    result2 := callFunc(vm, r, callSub("11"))
-    fmt.Println("result2:" + result2)
-    result3 := callFunc(vm, r, callSub("12"))
-    fmt.Println("result2:" + result3)
-    result4 := callFunc(vm, r, callSub("13"))
-    fmt.Println("result2:" + result4)
-    result5 := callFunc(vm, r, callSub("14"))
-    fmt.Println("result2:" + result5)
+    //result2 := callFunc(vm, r, callSub("11"))
+    //fmt.Println("result2:" + result2)
+    //result3 := callFunc(vm, r, callSub("12"))
+    //fmt.Println("result2:" + result3)
+    //result4 := callFunc(vm, r, callSub("13"))
+    //fmt.Println("result2:" + result4)
+    //result5 := callFunc(vm, r, callSub("14"))
+    //fmt.Println("result2:" + result5)
 }
